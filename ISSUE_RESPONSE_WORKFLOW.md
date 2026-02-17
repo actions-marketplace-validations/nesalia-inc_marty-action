@@ -136,7 +136,7 @@ jobs:
             ```
 
           claude_args: |
-            --allowedTools "Bash(gh issue:*),Bash(gh api:*),Read"
+            --allowedTools "Bash(gh:*),Bash(jq:*),Read"
             --max-turns 8
 
         env:
@@ -367,6 +367,79 @@ prompt: |
 | **Reduced duplicates** | Fewer "anyone here?" follow-ups |
 | **Better UX** | Clear communication of state |
 | **Professional** | Shows activity, not silence |
+
+---
+
+## 🔧 Required Tools Configuration
+
+### Why `Bash(gh:*)` and `Bash(jq:*)` are Required
+
+The progress display system requires Marty to:
+
+1. **Post comments** using `gh issue comment`
+2. **Capture IDs** using `jq` to parse JSON responses
+3. **Edit comments** using `gh issue edit`
+
+Without these tools, Marty cannot:
+- Post the progress indicator
+- Extract the comment ID for editing
+- Update the comment with the final response
+
+### Allowed Tools Breakdown
+
+```yaml
+--allowedTools "Bash(gh:*),Bash(jq:*),Read"
+```
+
+| Tool | Purpose | Example Commands |
+|------|---------|------------------|
+| `Bash(gh:*)` | GitHub CLI operations | `gh issue comment`, `gh issue edit`, `gh issue view` |
+| `Bash(jq:*)` | JSON parsing | `jq -r '.id'`, `jq -r '.body'` |
+| `Read` | Read repository files | Understanding code context |
+
+### Security Considerations
+
+**With `Bash(gh:*)`, Marty can:**
+- ✅ Post, edit, delete comments
+- ✅ Add/remove labels
+- ✅ Edit issues
+- ❌ Cannot modify code (no `Write` tool)
+- ❌ Cannot run arbitrary bash commands (only `gh` and `jq`)
+
+**If you need even more permissive:**
+
+```yaml
+--allowedTools "Bash(*),Read"
+```
+
+This allows ANY bash command but is **less secure**. Use only for trusted repositories.
+
+**For maximum security (no progress display):**
+
+```yaml
+--allowedTools "Bash(gh issue comment:*)"
+```
+
+This only allows posting comments, not editing (so no progress display).
+
+### What Happened Without Proper Tools
+
+**Original problematic config:**
+```yaml
+--allowedTools "Bash(gh issue:*),Bash(gh api:*)"
+```
+
+**Problem:** Commands with variable assignments don't match the pattern:
+
+```bash
+# ❌ Doesn't match "Bash(gh issue:*)" pattern
+ISSUE_NUMBER=46 RESPONSE=$(gh issue comment ...) && ...
+
+# ✅ Would match
+gh issue comment $ISSUE_NUMBER --body "..."
+```
+
+**Solution:** Use `Bash(gh:*)` to match ANY command starting with `gh`, regardless of variable assignments or pipes.
 
 ---
 
