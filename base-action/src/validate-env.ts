@@ -20,9 +20,15 @@ export function validateEnvironmentVariables() {
   }
 
   if (!useBedrock && !useVertex && !useFoundry) {
-    if (!anthropicApiKey && !claudeCodeOAuthToken) {
+    const anthropicBaseUrl = process.env.ANTHROPIC_BASE_URL;
+    const anthropicAuthToken = process.env.ANTHROPIC_AUTH_TOKEN;
+
+    // Allow custom providers (like Z.ai) that use base URL + auth token
+    const hasCustomProvider = anthropicBaseUrl && (anthropicAuthToken || anthropicApiKey);
+
+    if (!anthropicApiKey && !claudeCodeOAuthToken && !hasCustomProvider) {
       errors.push(
-        "Either ANTHROPIC_API_KEY or CLAUDE_CODE_OAUTH_TOKEN is required when using direct Anthropic API.",
+        "Either ANTHROPIC_API_KEY, CLAUDE_CODE_OAUTH_TOKEN, or ANTHROPIC_BASE_URL with authentication is required.",
       );
     }
   } else if (useBedrock) {
