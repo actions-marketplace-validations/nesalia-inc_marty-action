@@ -24,9 +24,9 @@ jobs:
 
       - uses: ./
         with:
+          github_token: ${{ steps.marty-token.outputs.token }}
           prompt: "Say 'Marty by Nesalia is alive!' in a creative way"
         env:
-          OVERRIDE_GITHUB_TOKEN: ${{ steps.marty-token.outputs.token }}
           # Z.ai Configuration
           ANTHROPIC_BASE_URL: https://api.z.ai/api/anthropic
           ANTHROPIC_AUTH_TOKEN: ${{ secrets.ZAI_API_KEY }}
